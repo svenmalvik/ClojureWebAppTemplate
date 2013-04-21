@@ -1,0 +1,119 @@
+Switch to workspace
+
+lein new mybank
+
+new Java Project in intellij
+
+open project.clj and core.clj file
+
+lein run gives :main missing error
+
+add:
+	(defn -main [& args] (foo "World")) in core.clj
+
+lein run again
+
+show: lein repl
+			(foo "Mars")
+
+change main:
+	(defn -main [& args] (run-jetty my_routes {:port 8080}))
+include jetty-adapter and compojure in project.clj and include it in core.clj
+> Explain the difference between use and require
+
+write defroutes:	
+	(defroutes my_routes
+  	(GET "/" [] (foo "bla"))
+  	(route/resources "/"))
+
+
+Replace foo with (view/index-page) and add [mybank.view :as view] in require
+
+delete foo function
+
+create simple mybank.view and show it
+	(ns mybank.view)
+		(defn index-page [] "Bla2")
+
+Include hiccup deps
+
+change it and show it
+  (:use
+    hiccup.page
+    hiccup.element))
+(defn index-page []
+  (html5
+    [:html
+      [:head]
+      [:body "bla"]]))
+
+Let's create something useful. What about a Newsletter subscription? For that we need an email input field and server side validation and a database. Let's take angularjs for the ajax interactions.
+
+include-js "http://code.angularjs.org/1.0.6/angular.min.js" "/js/mybank.js"
+
+form:
+    [:html {:ng-app ""}
+      [:head]
+      [:body
+        [:div {:ng-controller "controller"}
+          [:form {:novalidate ""}
+            [:h1 "Register for Newsletter"]
+
+            [:label "Email:"][:input {:name "uEmail" :type "text" :ng-model "user.email" :required "true"}][:br]
+            [:span#response]
+            [:button {:ng-click "saveit(user)"} "Save"]
+            ]]]]))
+
+mybank.js:
+function controller($scope, $http) {
+    $scope.url = 'http://localhost:8080/';
+
+    $scope.saveit = function() {
+        var transform = function(data){return $.param(data);}
+
+        $http.post($scope.url, $scope.user, {
+            headers: { 'Content-Type' : 'application/x-www-form-urlencoded; charset=UTF-8'},
+                       'transformRequest' : transform})
+            .success(function(data, status) {
+                $('#response').text(data.response);
+            })
+            .error(function(data, status) {
+                $('#response').text("Request failed");
+            });
+    }
+}
+
+Now, we have to return something. What about json.
+
+add [clojure.data.json :as json] in require
+add [org.clojure/data.json "0.2.1"] in project
+replace ring-jetty-.. with [ring/ring "1.1.8"]
+
+my routes add
+(POST "/" [email] (json/json-str {:response email}))
+BUT for that we have to add support from the ring.middleware
+ring.middleware.params
+... and add a handler
+(def app (wrap-params my_routes))
+
+lein run
+
+Let's make autoreload:
+  :plugins [[lein-ring "0.8.3"]]
+  :ring {:handler mybank.core/app
+         :auto-reload? true
+         :auto-refresh? true}
+remove -main
+
+lein ring server 3000
+
+lein uberjar
+
+---		 
+
+ok, now we need a database.
+I created one named mybank with a table named subscribers
+
+Let's connect to it.
+
+
