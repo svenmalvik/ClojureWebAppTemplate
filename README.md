@@ -1,13 +1,5 @@
-# mybank
+ClojureWebAppTemplate
 
-A Clojure library designed to ... well, that part is up to you.
 
-## Usage
+ClojureWebAppTemplate is a Clojure Web Application Template Project controlled by leiningen 
 
-FIXME
-
-## License
-
-Copyright © 2013 FIXME
-
-Distributed under the Eclipse Public License, the same as Clojure.
