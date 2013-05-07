@@ -12,10 +12,11 @@
   :plugins [[lein-ring "0.8.3"]]
   :ring {:handler mybank.core/app
          :auto-reload? true
-         :auto-refresh? true
-         :stacktraces? true}
+         :auto-refresh? false}
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [compojure "1.1.3"]
                  [hiccup "1.0.2"]
                  [org.clojure/data.json "0.2.1"]
-                 [ring/ring "1.1.8"]])
+                 [ring/ring "1.1.8"]
+                 [org.clojure/java.jdbc "0.2.3"]
+                 [mysql/mysql-connector-java "5.1.23"]])

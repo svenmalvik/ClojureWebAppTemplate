@@ -9,27 +9,50 @@ Open both project.clj and core.clj files
 lein run gives :main missing error
 
 add:
-	(defn -main [& args] (foo "World")) in core.clj
+	:main mybank2.core > project
+	(defn -main [& args] (foo "World")) > core.clj
 
 lein run again > voila
 
+change foo:
+(defn foo
+  "I don't do a whole lot."
+  [x]
+  (str "Hello, " x))
+
 Now, let us see if it works with the repl as well.
 show: lein repl
-			(foo "Mars")
+			(foo "Fred")
 
 Let us add a web server
-change main:
-	(defn -main [& args] (run-jetty my_routes {:port 8080}))
-include jetty-adapter and compojure in project.clj and include it in core.clj
-> Explain the difference between use and require
+procect deps:
+[ring/ring "1.1.8"]
+[compojure "1.1.3"]	
+  :plugins [[lein-ring "0.8.3"]]
+  :ring {:handler mybank2.core/my_routes
+         :auto-reload? true
+         :auto-refresh? false}
 
-write defroutes:	
-	(defroutes my_routes
-  	(GET "/" [] (foo "bla"))
-  	(route/resources "/"))
+core:
+  (:use
+    compojure.core)
+  (:require
+    [compojure.route :as route])
+	
+core:
+(defroutes my_routes
+  (GET "/" [] (foo "Bernd"))
+  (route/resources "/"))		 
 
 
-Replace foo with (view/index-page) and add [mybank.view :as view] in require
+
+lein deps
+
+lein ring server 3000		
+
+Let's add some html with hiccup
+
+add [mybank.view :as view] in require and Replace foo with (view/index-page)  
 
 delete foo function
 
@@ -43,15 +66,16 @@ change it and show it
   (:use
     hiccup.page
     hiccup.element))
+	
 (defn index-page []
   (html5
     [:html
       [:head]
       [:body "bla"]]))
 
-Let's create something useful. What about a Newsletter subscription? For that we need an email input field and server side validation and a database. Let's take angularjs for the ajax interactions.
 
-include-js "http://code.angularjs.org/1.0.6/angular.min.js" "/js/mybank.js"
+
+Let's create something useful. What about a Newsletter subscription? For that we need an email input field and server side validation and a database. Let's take angularjs for the ajax interactions.
 
 form:
     [:html {:ng-app ""}
@@ -65,8 +89,13 @@ form:
             [:span#response]
             [:button {:ng-click "saveit(user)"} "Save"]
             ]]]]))
+			
+chrome
 
-mybank.js:
+(include-js "http://code.jquery.com/jquery-1.9.1.min.js" "http://code.angularjs.org/1.0.6/angular.min.js" "/js/mybank.js")
+
+add 
+resources/public/js/mybank.js
 function controller($scope, $http) {
     $scope.url = 'http://localhost:3000/';
 
@@ -85,18 +114,23 @@ function controller($scope, $http) {
     }
 }
 
+
+
 Now, we have to return something. What about json.
 
-add [clojure.data.json :as json] in require
-add [org.clojure/data.json "0.2.1"] in project
-replace ring-jetty-.. with [ring/ring "1.1.8"]
+
 
 my routes add
 (POST "/" [email] (json/json-str {:response email}))
 BUT for that we have to add support from the ring.middleware
-ring.middleware.params
+core :use ring.middleware.params
 ... and add a handler
 (def app (wrap-params my_routes))
+ .. and since we handle json ...
+add [clojure.data.json :as json] in core require
+add [org.clojure/data.json "0.2.1"] in project deps
+
+lein deps
 
 
 lein uberjar
@@ -107,5 +141,30 @@ ok, now we need a database.
 I created one named mybank with a table named subscribers
 
 Let's connect to it.
+I prepared a database called mybank and it has one table subscribers with one column email
 
+project deps:
+					[org.clojure/java.jdbc "0.2.3"]
+					[mysql/mysql-connector-java "5.1.23"]
+					
+core require:
+[clojure.java.jdbc :as jdbc]
+
+add configurtion
+(def db {
+	:classname "com.mysql.jdbc.Driver"
+	:subprotocol "mysql"
+	:subname "//localhost:3306/nordea"
+	:user "root"
+	:password ""})
+	
+lets write an add function
+(defn insert-subscriber [email]
+  (jdbc/insert-values
+    :subscribers [:email] [email]))
+	
+(defn add-subscriber ([email]
+ (jdbc/with-connection db
+   (jdbc/transaction
+     (insert-subscriber email)))))				
 
